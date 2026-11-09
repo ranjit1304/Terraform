@@ -1,0 +1,50 @@
+resource "aws_lb" "mylb" {
+    name = "mylb"
+    internal = false
+    load_balancer_type = "application"
+
+    security_groups = [aws_security_group.webSg.id]
+    subnets = [aws_subnet.sub1.id, aws_subnet.sub2.id]
+
+    tags = {
+        name    = "web"
+    }
+    
+}
+
+resource "aws_lb_target_group" "tg" {
+    name = "myTg"
+    port =  80
+    protocol = "HTTP"
+    vpc_id = aws_vpc.myvpc.id
+
+    health_check {
+      path = "/"
+      port = "traffic-port"
+
+    }
+  
+}
+
+resource "aws_lb_target_group_attachment" "attach1" {
+    target_group_arn = aws_lb_target_group.tg.arn
+    target_id = aws_instance.webserver1.id
+    port = 80
+}
+
+resource "aws_lb_target_group_attachment" "attach2" {
+    target_group_arn = aws_lb_target_group.tg.arn
+    target_id = aws_instance.webserver2.id
+    port = 80
+}
+
+resource "aws_lb_listener" "listener" {
+    load_balancer_arn = aws_lb.mylb.arn
+    port = 80
+    protocol = "HTTP"
+     
+     default_action {
+       target_group_arn = aws_lb_target_group.tg.arn
+       type = "forward"
+     }
+}
